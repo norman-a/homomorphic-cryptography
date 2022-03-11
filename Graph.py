@@ -1,66 +1,97 @@
 import pprint
 from collections import defaultdict
+import networkx as nx
+import matplotlib.pyplot as plt
 import random
 
 
-class Graph(object):
-    """ Graph data structure, undirected by default. """
-
-    def __init__(self, directed=False):
+class Graph:
+    def __init__(self, vertex):
+        """
+        Initializes a complete graph of v vertexes.
+        """
         self.adj_list = {}
-        self.vertex_count = 0
-        self.edge_count = 0
-        self._directed = directed
+        self.vertex_count = vertex
+        self.edge_count = vertex * (vertex - 1) / 2  # no. edges formula
         self._key = []
 
-    def return_key(self):
+        for v in range(vertex):
+            self.adj_list[v] = []
+            for x in range(v+1, vertex):
+                # for each edge assign a random weight
+                w = random.choice(range(1, 10))
+                # append the edge as a tuple of the other vertex and weight
+                self.adj_list[v].append([x, w])
+
+    def get_key(self):
         return self._key
 
-    def in_key(self, v1, v2):
-        """
-        returns whether there's a list with the first two elements being v1 and
-        v2 to be used in encrypt_g2()
-        """
-        for element in self._key:
-            if (element[0] == v1 and element[1] == v2) or \
-                    (element[0] == v2 and element[1] == v1):
-                return element
-        return None
-
     def add_vertex(self, v):
-        if v in self.adj_list:
-            print("vertex ", v, " already exists!")
-        else:
-            self.adj_list[v] = []
-            self.vertex_count += 1
+        """
+        Add a vertex
+        """
 
-    def add_edge(self, v1, v2, w=None):
-        if v1 not in self.adj_list:
-            print("vertex ", v1, " doesn't exist!")
-        elif v2 not in self.adj_list:
-            print("vertex ", v2, " doesn't exist!")
-        elif v1 == v2:
-            print("two vertices can't be equal!")
-        #elif [v2, w] in self.adj_list[v1]:
-        #    print(v1, ", ", v2, ", ", w, "edge already exists!")
+        if v in self.adj_list:
+            print("Vertex ", v, "already existst!") # TODO exception
         else:
-            if not self._directed:
-                temp2 = [v1, w]
-                self.adj_list[v2].append(temp2)
-            temp1 = [v2, w]
-            self.adj_list[v1].append(temp1)
-            self.edge_count += 1
+            self.vertex_count += 1
+            self.adj_list[v] = []
+
+    def add_edge(self, v1, v2, w):
+        """
+        Add an edge to the graph
+        """
+        if v1 not in self.adj_list or v2 not in self.adj_list:
+            print("Edge can't be created")
+        elif v1 == v2:
+            print("2 distinct vertexes must form an edge")
+        else:
+            edge = [v2, w]
+            self.adj_list[v1].append(edge)
 
     def remove_vertex(self, v):
+
         if v in self.adj_list:
+            # remove the edges that initiate from v
             for edge in self.adj_list[v]:
-                self.remove_edge(v, edge[0], edge[1])
+                self.remove_edge(v, edge[0])
             self.adj_list.pop(v)
 
-    def remove_edge(self, v1, v2, w=None):
+            # remove the edges that end at v
+            for vertex in self.adj_list:
+                for edge2 in self.adj_list[vertex]:
+                    if edge2[0] == v:
+                        self.adj_list[vertex].remove((edge2[0], edge2[1]))
+            return True
+        return False
+
+    def remove_edge(self, v1, v2):
+        """
+        remove all edges between v1 and v2 regardless of weight
+        """
+
         if v1 in self.adj_list and v2 in self.adj_list:
-            self.adj_list[v1].remove([v2, w])
-            if [v1, w] in self.adj_list[v2]:
+            # remove all instances of v2 being the tail of v1
+            for vertex1 in self.adj_list[v1]:
+                if vertex1[0] == v2:
+                    self.adj_list[v1].remove([v2, vertex1[1]])
+            # remove all instances of v1 being at the tail of v2
+            for vertex2 in self.adj_list[v2]:
+                if vertex2[0] == v1:
+                    self.adj_list[v2].remove([v1, vertex2[1]])
+            return True
+        else:
+            return False
+
+    def remove_edge_weight(self, v1, v2, w):
+        """
+        remove the edges between v1 and v2 that have weight w.
+        used in encryption/decryption
+        """
+        if v1 in self.adj_list and v2 in self.adj_list:
+            if (v2, w) in self.adj_list[v1]:
+                self.adj_list[v1].remove([v2, w])
+            if (v1, w) in self.adj_list[v2]:
                 self.adj_list[v2].remove([v1, w])
             return True
         else:
@@ -68,7 +99,7 @@ class Graph(object):
 
     def encrypt_g2(self):
         """
-        Encryption of the graph by adding sufficient vertices n and sufficient edges m
+        Encryption of the graph by adding sufficient n vertices and sufficient m edges
         to the graph
         """
         alpha = random.randint(1, 10)
@@ -116,7 +147,7 @@ class Graph(object):
         for edge in self._key[2:]:
             # remove every edge and calculate the weight associated between the
             # current pair
-            self.remove_edge(edge[0], edge[1], edge[2])
+            self.remove_edge_weight(edge[0], edge[1], edge[2])
             if edge[0] == curr_v1 and edge[1] == curr_v2:
                 if edge[3] == 0:
                     curr_w += edge[2]
@@ -193,6 +224,32 @@ class Graph(object):
                                 self.adj_list[v][i] = [self.adj_list[v][i][0], int(self.adj_list[v][i][1]/key[2])]
                         i += 1
 
+    def visualize(self):
+        """
+        Using networkx and matplt libraries draw the graph
+        """
+        # make a list of edges
+        edges = []
+        for key in self.adj_list:
+            for v in range(len(self.adj_list[key])):
+                edges.append((key, self.adj_list[key][v][0]))
+        print(edges)
+        G = nx.MultiGraph(edges)
+        pos = nx.random_layout(G)
+        nx.draw_networkx_nodes(G, pos, node_color = 'r', node_size = 100, alpha = 1)
+        ax = plt.gca()
+        for e in G.edges:
+            ax.annotate("",
+                        xy=pos[e[0]], xycoords='data',
+                        xytext=pos[e[1]], textcoords='data',
+                        arrowprops=dict(arrowstyle="->", color="0.5",
+                                        shrinkA=5, shrinkB=5,
+                                        patchA=None, patchB=None,
+                                        connectionstyle="arc3,rad=rrr".replace('rrr',str(0.3*e[2])),),)
+        plt.axis('off')
+        plt.show()
+
+
     def __str__(self):
         """
         prints all the edges in the graph
@@ -203,15 +260,3 @@ class Graph(object):
                 final += "{} -> {}, edge weight: {} \n".format(vertex,
                                                                edge[0], edge[1])
         return final
-
-"""
-    def remove_edge(self, v1, v2, w=None):
-        if v1 in self.adj_list and v2 in self.adj_list \
-                and [v2, w] in self.adj_list[v1] and [v1, w] in self.adj_list[v2]:
-            self.adj_list[v1].remove([v2, w])
-            if not self._directed:
-                self.adj_list[v2].remove([v1, w])
-            return True
-        else:
-            return False
-"""
