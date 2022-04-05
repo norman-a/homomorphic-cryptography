@@ -1,6 +1,5 @@
 import random
 import numpy as np
-import pprint
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -21,7 +20,6 @@ class Graph(object):
                 # o = np.random.randint(0, 2)
                 self.edge_list.append((i, j, weight))
 
-        # print(self.edge_list)
         print(self.edge_list)
 
     def get_edge_list(self):
@@ -35,7 +33,6 @@ class Graph(object):
         for i in range(0, size):
             for j in range(i + 1, size):
                 edges.append((i, j, np.random.randint(1, 10)))
-        #      print ( edges)
         return edges
 
     def create_adj_matrix(self):
@@ -71,22 +68,15 @@ class Graph(object):
                 continue
             weight = np.random.randint(1, 10)
             self.edge_list.append((x, y, weight))
-            #   print(self.edge_list)
             o = np.random.randint(0, 2) # 0 signals addition and 1 multiplication
             for key in self.keys:
                 if (key[0] == x and key[1] == y) or (key[0] == y and key[1] == x):
                     o = key[3]
                     break
             self.keys.append((x, y, weight, o))
-            #  print(self.keys )
             j = j + 1
         self.edge_list = sorted(self.edge_list, key=lambda t: (t[0], t[1]))
-        #  print(self.edge_list)
         self.keys = sorted(self.keys, key=lambda t: (t[0], t[1]))
-        # print(self.edge_list)
-
-    # #  print(self.edge_list)
-    #     print(self.keys_dict)
 
     def encrypt_g3(self):
         # merge edges
@@ -156,18 +146,18 @@ class Graph(object):
         # update edges
 
         print(self.keys[-1])
-        # print(self.mappings)
-        # for i in range(0, len(self.edge_list)):
-        #     for mapping in self.keys[-1]:
-        #         if self.edge_list[i][0] == mapping[0]:
-        #             temp = list(self.edge_list[i])
-        #             temp[0] = mapping[1]
-        #             self.edge_list[i] = tuple(temp)
-        #         if self.edge_list[i][1] == mapping[0]:
-        #             temp = list(self.edge_list[i])
-        #             temp[1] = mapping[1]
-        #             self.edge_list[i] = tuple(temp)
-        # self.edge_list = sorted(self.edge_list, key=lambda t: (t[0], t[1]))
+        print(self.mappings)
+        for i in range(0, len(self.edge_list)):
+            for mapping in self.keys[-1]:
+                if self.edge_list[i][0] == mapping[0]:
+                    temp = list(self.edge_list[i])
+                    temp[0] = mapping[1]
+                    self.edge_list[i] = tuple(temp)
+                if self.edge_list[i][1] == mapping[0]:
+                    temp = list(self.edge_list[i])
+                    temp[1] = mapping[1]
+                    self.edge_list[i] = tuple(temp)
+        self.edge_list = sorted(self.edge_list, key=lambda t: (t[0], t[1]))
 
         print("keys: \n", self.keys)
         print("G3 edge list:\n", self.edge_list)
