@@ -3,7 +3,7 @@
 # Press ⇧F10 to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
-from graph import Graph
+from Graph import Graph
 from Query import Query
 if __name__ == '__main__':
     # start a Query class
